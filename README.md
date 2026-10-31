@@ -12,7 +12,7 @@
 [![Database](https://img.shields.io/badge/Database-Supabase_PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 [![Workflows](https://img.shields.io/badge/Workflows-Inngest_Event_Engine-6366F1?style=for-the-badge&logo=inngest&logoColor=white)](https://www.inngest.com/)
 [![AI Engine](https://img.shields.io/badge/AI_Engine-Gemini_3.5_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
-[![Security](https://img.shields.io/badge/Security-Single_Super_Admin_%2B_RLS-8B5CF6?style=for-the-badge)](https://supabase.com/docs/guides/auth/row-level-security)
+[![Security](https://img.shields.io/badge/Security-Argon2id_%2B_JWT_%2B_RLS-8B5CF6?style=for-the-badge)](https://supabase.com/docs/guides/auth/row-level-security)
 [![License](https://img.shields.io/badge/License-ISC-green.svg?style=for-the-badge)](https://opensource.org/licenses/ISC)
 
 <br/>
@@ -55,7 +55,8 @@ Traditional enterprise IT ticketing systems suffer from sluggish manual triage q
 
 ### 🖥️ Desktop-First Operations Dashboard (React 18 + Vite + Tailwind)
 - **High-Density Telemetry:** Live incident counters tracking Total Queue, In-Progress Triage, Resolved/Closed completion rates, and High-Priority bottlenecks with sub-pixel indicator dots.
-- **Search & Multi-Facet Filtering:** Instant full-text search across ticket titles, descriptions, and IDs, paired with sunken segmented status filters (`ALL`, `OPEN`, `IN_PROGRESS`, `RESOLVED`, `CLOSED`).
+- **Global Command Search & Hotkeys (`Ctrl+K` / `⌘K`):** Global OS-aware keyboard search palette with auto-transition from Dashboard to filtered incident queues, real-time live filtering, and one-click clear controls.
+- **Multi-Facet Status Filtering:** Sunken segmented status filters (`ALL`, `OPEN`, `IN_PROGRESS`, `RESOLVED`, `CLOSED`) with normalized case handling and live queue counts.
 - **Dedicated AI Agent Triage Inspector:** Real-time inspector panel on ticket detail views rendering Gemini 3.5 Flash analysis, diagnostic confidence notes, extracted skill tags, and audit trails.
 - **Specialist Roster & Skills Directory:** Administrative roster view displaying team members, role assignments (`user`, `moderator`, `admin`), registered proficiencies, and AI routing readiness.
 - **Autofill Dark-Mode Compatibility:** Full WebKit browser autofill overrides to ensure credential fields remain seamless in dark mode without glare.
@@ -166,7 +167,7 @@ The Lysiq AI interface utilizes the **Cinematic Precision** dark-mode design sys
 | **Workflow Engine** | [Inngest](https://www.inngest.com/) | Serverless background event-driven orchestration |
 | **AI LLM Model** | [Google Gemini 3.5 Flash](https://ai.google.dev/) | Autonomous incident triage & skill extraction |
 | **Email Transport** | [Nodemailer](https://nodemailer.com/) + [Mailtrap](https://mailtrap.io/) | Transactional specialist alerts and SMTP testing |
-| **Authentication** | [bcrypt](https://github.com/kelektiv/node.bcrypt.js) + [JWT](https://jwt.io/) | Secure password hashing & Bearer token sessions |
+| **Authentication** | [Argon2id](https://github.com/ranisalt/node-argon2) + [JWT](https://jwt.io/) | Memory-hard password hashing (OWASP standard) with dual Bcrypt backward compatibility & Bearer sessions |
 
 ---
 
@@ -237,6 +238,14 @@ Lysiq AI implements a comprehensive **5-Layer Defense Architecture** enforcing t
 | **3. Row Level Security** | Policies `Prevent public admin creation` & `Prevent public admin promotion` | Blocks unprivileged Supabase requests from escalating their role to `admin`. |
 | **4. Backend API Guards** | `POST /api/users/signup` and `PUT /api/users/update` | Explicitly rejects `role: 'admin'` with HTTP 403 Forbidden; validates caller identity via `requireSuperAdmin`. |
 | **5. Frontend UI Controls** | `AuthView.tsx` & `TeamView.tsx` | Super Admin option is completely removed from public signup; admin rows in the specialist roster have disabled/protected role selectors. |
+
+### 🔑 Cryptographic Password Security: Argon2id with Dual-Verification
+
+To prevent GPU/ASIC offline dictionary and brute-force cracking, Lysiq AI secures user credentials using **Argon2id**—the winner of the Password Hashing Competition (PHC) and the official OWASP recommendation:
+
+* **Memory-Hard & CPU-Hard:** Configured with 64 MB of RAM allocation (`m=65536`), 3 time iterations (`t=3`), and 1 thread (`p=1`) per hash, forcing attacker GPUs to exhaust VRAM during parallel cracking attempts.
+* **Backward-Compatible Dual-Verification:** The authentication controller (`controllers/user.js`) natively handles both modern Argon2id hashes (`$argon2id$...`) and legacy Bcrypt hashes (`$2b$...`).
+* **Zero-Downtime Seamless Auto-Upgrade:** When an existing user or Super Admin logs in with valid legacy Bcrypt credentials, the server transparently recalculates and upgrades their stored hash to Argon2id without any disruption or password reset required.
 
 ---
 
